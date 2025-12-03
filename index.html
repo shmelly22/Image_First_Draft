@@ -10,23 +10,25 @@
   <body>
     <a-scene renderer="antialias:true" background="color:#0b1320">
       <!-- =========================================================
-           1) ASSETS
-           - Textures: grass + wood
-           - Models: rocks + barrel
-           (Rename src paths if your filenames differ.)
+           1) ASSETS (textures + models)
+           Make sure these files are in the SAME folder as index.html:
+           - grass_texture.jpg
+           - wood_texture.jpg
+           - Rocks.glb
+           - Medieval_Barrel.glb
       ========================================================== -->
       <a-assets>
         <!-- Textures -->
-        <img id="grassTex" src="grass_texture.jpg" crossorigin="anonymous" />
-        <img id="woodTex"  src="wood_texture.jpg"  crossorigin="anonymous" />
+        <img id="grassTex" src="./grass_texture.jpg" crossorigin="anonymous" />
+        <img id="woodTex" src="./wood_texture.jpg" crossorigin="anonymous" />
 
         <!-- Models -->
-        <a-asset-item id="rockModel"   src="./Rocks.glb"></a-asset-item>
+        <a-asset-item id="rockModel" src="./Rocks.glb"></a-asset-item>
         <a-asset-item id="barrelModel" src="./Medieval_Barrel.glb"></a-asset-item>
       </a-assets>
 
       <!-- =========================================================
-           2) PLAYER / CAMERA (NO CURSOR)
+           2) CAMERA / PLAYER (no cursor)
       ========================================================== -->
       <a-entity camera look-controls wasd-controls position="0 1.6 7"></a-entity>
 
@@ -42,10 +44,13 @@
       ></a-sphere>
 
       <a-entity light="type: ambient; intensity: 0.28; color: #8aa0b8"></a-entity>
-      <a-entity light="type: directional; intensity: 0.65; color: #bcd6ff" position="-6 10 -8"></a-entity>
+      <a-entity
+        light="type: directional; intensity: 0.65; color: #bcd6ff"
+        position="-6 10 -8"
+      ></a-entity>
 
       <!-- =========================================================
-           4) GROUND (USES GRASS TEXTURE)
+           4) GROUND (grass texture)
       ========================================================== -->
       <a-plane
         id="ground"
@@ -53,11 +58,11 @@
         rotation="-90 0 0"
         width="90"
         height="90"
-        material="src:#grassTex; repeat:12 12; roughness:1; metalness:0"
+        material="src:#grassTex; repeat:14 14; roughness:1; metalness:0"
       ></a-plane>
 
       <!-- =========================================================
-           5) CAMPSITE (FIRE + LIGHT)
+           5) CAMPFIRE (logs use wood texture)
       ========================================================== -->
       <a-entity id="campfire" position="0 0 -4">
         <!-- Stone ring -->
@@ -70,49 +75,99 @@
         <a-sphere radius="0.18" position="0.00 0.10 -0.85" color="#6e737a"></a-sphere>
         <a-sphere radius="0.18" position="0.60 0.10 -0.60" color="#6e737a"></a-sphere>
 
-        <!-- Logs under flame (WOOD TEXTURE) -->
-        <a-cylinder radius="0.09" height="1.7" position="0 0.18 0" rotation="90 35 0"
-          material="src:#woodTex; repeat:3 1; roughness:1; metalness:0"></a-cylinder>
-        <a-cylinder radius="0.09" height="1.7" position="0 0.18 0" rotation="90 -35 0"
-          material="src:#woodTex; repeat:3 1; roughness:1; metalness:0"></a-cylinder>
+        <!-- Fire logs -->
+        <a-cylinder
+          radius="0.09"
+          height="1.7"
+          position="0 0.18 0"
+          rotation="90 35 0"
+          material="src:#woodTex; repeat:3 1; roughness:1; metalness:0"
+        ></a-cylinder>
 
-        <!-- Flame -->
-        <a-cone radius-bottom="0.36" radius-top="0.02" height="1.05" position="0 0.58 0"
-          material="color:#ffbf57; emissive:#ffbf57; emissiveIntensity:1.35; opacity:0.97">
-          <a-animation attribute="scale" from="1 1 1" to="1.18 1.32 1.18" dur="300"
-            direction="alternate" repeat="indefinite"></a-animation>
+        <a-cylinder
+          radius="0.09"
+          height="1.7"
+          position="0 0.18 0"
+          rotation="90 -35 0"
+          material="src:#woodTex; repeat:3 1; roughness:1; metalness:0"
+        ></a-cylinder>
+
+        <!-- Flame layers -->
+        <a-cone
+          radius-bottom="0.36"
+          radius-top="0.02"
+          height="1.05"
+          position="0 0.58 0"
+          material="color:#ffbf57; emissive:#ffbf57; emissiveIntensity:1.35; opacity:0.97"
+        >
+          <a-animation
+            attribute="scale"
+            from="1 1 1"
+            to="1.18 1.32 1.18"
+            dur="300"
+            direction="alternate"
+            repeat="indefinite"
+          ></a-animation>
         </a-cone>
 
-        <a-cone radius-bottom="0.24" radius-top="0.01" height="0.9" position="0 0.70 0"
-          material="color:#ff5a3a; emissive:#ff5a3a; emissiveIntensity:1.45; opacity:0.92">
-          <a-animation attribute="rotation" from="0 0 0" to="0 22 0" dur="420"
-            direction="alternate" repeat="indefinite"></a-animation>
+        <a-cone
+          radius-bottom="0.24"
+          radius-top="0.01"
+          height="0.9"
+          position="0 0.70 0"
+          material="color:#ff5a3a; emissive:#ff5a3a; emissiveIntensity:1.45; opacity:0.92"
+        >
+          <a-animation
+            attribute="rotation"
+            from="0 0 0"
+            to="0 22 0"
+            dur="420"
+            direction="alternate"
+            repeat="indefinite"
+          ></a-animation>
         </a-cone>
 
         <!-- Fire light -->
-        <a-entity id="fireLight" light="type: point; color:#ffd2a1; intensity: 4.2; distance: 30; decay: 2"
-          position="0 0.95 0">
-          <a-animation attribute="light.intensity" from="3.4" to="4.8" dur="180"
-            direction="alternate" repeat="indefinite"></a-animation>
+        <a-entity
+          id="fireLight"
+          light="type: point; color:#ffd2a1; intensity: 4.2; distance: 30; decay: 2"
+          position="0 0.95 0"
+        >
+          <a-animation
+            attribute="light.intensity"
+            from="3.4"
+            to="4.8"
+            dur="180"
+            direction="alternate"
+            repeat="indefinite"
+          ></a-animation>
         </a-entity>
-        <a-entity light="type: point; color:#ff8a3d; intensity: 1.2; distance: 12; decay: 2"
-          position="0 0.45 0"></a-entity>
+
+        <a-entity
+          light="type: point; color:#ff8a3d; intensity: 1.2; distance: 12; decay: 2"
+          position="0 0.45 0"
+        ></a-entity>
       </a-entity>
 
       <!-- =========================================================
-           6) ROCK RING (GLB INSTANCES)
+           6) ROCK RING (populated by JS)
       ========================================================== -->
       <a-entity id="rockRing"></a-entity>
 
       <!-- =========================================================
-           7) CABIN (RAISED FLOOR, FLAT ROOF, WOOD TEXTURE)
+           7) CABIN (raised floor, walls use wood texture)
       ========================================================== -->
       <a-entity id="cabin" position="8 0 -7" rotation="0 -20 0">
-        <!-- Raised floor block -->
-        <a-box id="cabinFloor" width="6.6" height="0.45" depth="6.6"
-               position="0 0.225 0" color="#2a2a2a"></a-box>
+        <!-- Raised floor -->
+        <a-box
+          width="6.6"
+          height="0.45"
+          depth="6.6"
+          position="0 0.225 0"
+          color="#2a2a2a"
+        ></a-box>
 
-        <!-- Corner posts (WOOD TEXTURE) -->
+        <!-- Corner posts (wood texture) -->
         <a-cylinder radius="0.13" height="2.7" position="-3 1.55  3"
           material="src:#woodTex; repeat:1 2; roughness:1; metalness:0"></a-cylinder>
         <a-cylinder radius="0.13" height="2.7" position=" 3 1.55  3"
@@ -122,40 +177,55 @@
         <a-cylinder radius="0.13" height="2.7" position=" 3 1.55 -3"
           material="src:#woodTex; repeat:1 2; roughness:1; metalness:0"></a-cylinder>
 
-        <!-- Generated log walls (WOOD TEXTURE) -->
+        <!-- Log walls (generated in JS, wood texture applied there too) -->
         <a-entity id="logs"></a-entity>
 
-        <!-- Single flat roof panel sitting on top of walls -->
-        <a-box id="roof" width="7.1" height="0.18" depth="7.1"
-               position="0 2.92 0" color="#2a1c12"></a-box>
+        <!-- Flat roof -->
+        <a-box
+          width="7.1"
+          height="0.18"
+          depth="7.1"
+          position="0 2.92 0"
+          color="#2a1c12"
+        ></a-box>
 
         <!-- Porch step -->
-        <a-box width="2.4" height="0.15" depth="0.9"
-               color="#1f1f1f" position="0 0.10 3.65"></a-box>
+        <a-box
+          width="2.4"
+          height="0.15"
+          depth="0.9"
+          color="#1f1f1f"
+          position="0 0.10 3.65"
+        ></a-box>
 
-        <!-- Barrels (GLB) -->
-        <a-entity id="barrel1" gltf-model="#barrelModel"
-          position="2.1 0.70 2.7" rotation="0 -20 0" scale="25 25 25"></a-entity>
-        <a-entity id="barrel2" gltf-model="#barrelModel"
-          position="2.8 0.70 2.2" rotation="0 15 0" scale="25 25 25"></a-entity>
+        <!-- Barrels (GLB) — SHRUNK DOWN A TON -->
+        <a-entity
+          id="barrel1"
+          gltf-model="#barrelModel"
+          position="2.1 0.70 2.7"
+          rotation="0 -20 0"
+          scale="1.5 1.5 1.5"
+        ></a-entity>
 
-        <!-- Error sign if barrel GLB fails -->
-        <a-entity id="barrelErrorSign" visible="false" position="0 1.8 3.2">
-          <a-plane width="3.6" height="0.7" color="#3b0f0f" opacity="0.9"></a-plane>
-          <a-text value="BARREL GLB FAILED TO LOAD\n(see console)"
-                  align="center" color="#ffdada"
-                  position="0 0 0.01" width="4.5"></a-text>
-        </a-entity>
+        <a-entity
+          id="barrel2"
+          gltf-model="#barrelModel"
+          position="2.8 0.70 2.2"
+          rotation="0 15 0"
+          scale="1.5 1.5 1.5"
+        ></a-entity>
       </a-entity>
 
       <!-- =========================================================
-           8) FOREST (TREES WITH WOOD TRUNKS)
+           8) FOREST (trees populated by JS)
       ========================================================== -->
       <a-entity id="forest"></a-entity>
 
       <script>
         /* =========================================================
-           A) CABIN LOG WALLS (CYLINDERS WITH DOORWAY)
+           A) CABIN LOG WALLS (stacked cylinders + doorway hole)
+           - Wood texture applied to every log
+           - Wall stack begins ABOVE the raised floor
         ========================================================== */
         (function buildCabinLogs(){
           const logs = document.querySelector('#cabin #logs');
@@ -189,11 +259,11 @@
             // Back wall
             addLog({x:0, z:zBack}, {x:0, y:0, z:90}, W, y);
 
-            // Sides
+            // Side walls
             addLog({x:xLeft,  z:0}, {x:90, y:0, z:0}, D, y);
             addLog({x:xRight, z:0}, {x:90, y:0, z:0}, D, y);
 
-            // Front with doorway
+            // Front wall with doorway hole
             if (y <= doorTopY){
               const segLen = (W/2 - doorHalf);
               addLog({x:-(doorHalf + segLen/2), z:zFront}, {x:0, y:0, z:90}, segLen, y);
@@ -205,7 +275,9 @@
         })();
 
         /* =========================================================
-           B) FOREST GENERATOR (WOOD TRUNKS + GREEN CANOPIES)
+           B) FOREST GENERATOR
+           - Trunks use wood texture
+           - Keeps a clearing around cabin + campfire
         ========================================================== */
         (function populateForest(){
           const forest = document.getElementById('forest');
@@ -252,14 +324,16 @@
           while (placed < N){
             const x = (Math.random() * 2 - 1) * RANGE;
             const z = (Math.random() * 2 - 1) * RANGE;
+
             if (inClearing(x, z, clearFire) || inClearing(x, z, clearCabin)) continue;
+
             forest.appendChild(makeTree(x, z, 0.9 + Math.random() * 1.0));
             placed++;
           }
         })();
 
         /* =========================================================
-           C) ROCK RING (GLB) – 6 INSTANCES AROUND FIRE
+           C) ROCK RING (GLB instances)
         ========================================================== */
         (function ringOfRocks(){
           const ring = document.getElementById('rockRing');
@@ -285,25 +359,6 @@
 
             ring.appendChild(rock);
           }
-        })();
-
-        /* =========================================================
-           D) BARREL DEBUG – TELLS YOU IF GLB FAILS
-        ========================================================== */
-        (function barrelDebug(){
-          const sign = document.getElementById('barrelErrorSign');
-          const b1   = document.getElementById('barrel1');
-          const b2   = document.getElementById('barrel2');
-
-          const onErr = (which) => (e) => {
-            console.log(which, "BARREL MODEL ERROR:", e.detail);
-            sign.setAttribute('visible', 'true');
-          };
-
-          b1.addEventListener('model-loaded', () => console.log("barrel1 loaded"));
-          b2.addEventListener('model-loaded', () => console.log("barrel2 loaded"));
-          b1.addEventListener('model-error', onErr("barrel1"));
-          b2.addEventListener('model-error', onErr("barrel2"));
         })();
       </script>
     </a-scene>
