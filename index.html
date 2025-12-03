@@ -9,25 +9,24 @@
 
   <body>
     <a-scene renderer="antialias:true" background="color:#0b1320">
-
-      <!-- Camera (NO cursor = no weird circle) -->
+      <!-- Camera (NO cursor) -->
       <a-entity camera look-controls wasd-controls position="0 1.6 7"></a-entity>
 
       <!-- Sky + Moon -->
       <a-sky color="#0b1320"></a-sky>
       <a-sphere position="-12 12 -28" radius="1.35"
-                material="color:#eef4ff; emissive:#eef4ff; emissiveIntensity:0.35"></a-sphere>
+                material="color:#eef4ff; emissive:#eef4ff; emissiveIntensity:0.45"></a-sphere>
 
       <!-- Lighting -->
-      <a-entity light="type: ambient; intensity: 0.25; color: #8aa0b8"></a-entity>
-      <a-entity light="type: directional; intensity: 0.6; color: #bcd6ff" position="-6 10 -8"></a-entity>
+      <a-entity light="type: ambient; intensity: 0.28; color: #8aa0b8"></a-entity>
+      <a-entity light="type: directional; intensity: 0.65; color: #bcd6ff" position="-6 10 -8"></a-entity>
 
       <!-- Ground -->
       <a-plane position="0 0 0" rotation="-90 0 0" width="90" height="90" color="#17361f"></a-plane>
 
       <!-- Campfire -->
       <a-entity id="campfire" position="0 0 -4">
-        <!-- Rock ring (simple stones) -->
+        <!-- Stone ring -->
         <a-sphere radius="0.18" position="0.85 0.10 0.00" color="#6e737a"></a-sphere>
         <a-sphere radius="0.18" position="0.60 0.10 0.60" color="#6e737a"></a-sphere>
         <a-sphere radius="0.18" position="0.00 0.10 0.85" color="#6e737a"></a-sphere>
@@ -41,30 +40,36 @@
         <a-cylinder radius="0.09" height="1.7" position="0 0.18 0" rotation="90 35 0" color="#4b2f1a"></a-cylinder>
         <a-cylinder radius="0.09" height="1.7" position="0 0.18 0" rotation="90 -35 0" color="#3f2816"></a-cylinder>
 
-        <!-- Flame -->
-        <a-cone radius-bottom="0.34" radius-top="0.02" height="0.95" position="0 0.55 0"
-                material="color:#ffb347; emissive:#ffb347; emissiveIntensity:0.9; opacity:0.95">
-          <a-animation attribute="scale" from="1 1 1" to="1.15 1.25 1.15"
-                       dur="320" direction="alternate" repeat="indefinite"></a-animation>
-        </a-cone>
-        <a-cone radius-bottom="0.22" radius-top="0.01" height="0.8" position="0 0.62 0"
-                material="color:#ff5a3a; emissive:#ff5a3a; emissiveIntensity:1.0; opacity:0.9">
-          <a-animation attribute="rotation" from="0 0 0" to="0 18 0"
-                       dur="450" direction="alternate" repeat="indefinite"></a-animation>
+        <!-- Flame (brighter) -->
+        <a-cone radius-bottom="0.36" radius-top="0.02" height="1.05" position="0 0.58 0"
+                material="color:#ffbf57; emissive:#ffbf57; emissiveIntensity:1.35; opacity:0.97">
+          <a-animation attribute="scale" from="1 1 1" to="1.18 1.32 1.18"
+                       dur="300" direction="alternate" repeat="indefinite"></a-animation>
         </a-cone>
 
-        <!-- Campfire light -->
-        <a-entity light="type: point; color:#ffcc88; intensity: 1.9; distance: 18; decay: 2"
-                  position="0 0.85 0">
-          <a-animation attribute="light.intensity" from="1.2" to="2.3"
-                       dur="220" direction="alternate" repeat="indefinite"></a-animation>
+        <a-cone radius-bottom="0.24" radius-top="0.01" height="0.9" position="0 0.70 0"
+                material="color:#ff5a3a; emissive:#ff5a3a; emissiveIntensity:1.45; opacity:0.92">
+          <a-animation attribute="rotation" from="0 0 0" to="0 22 0"
+                       dur="420" direction="alternate" repeat="indefinite"></a-animation>
+        </a-cone>
+
+        <!-- Brighter fire light + extra glow light -->
+        <a-entity id="fireLight"
+                  light="type: point; color:#ffd2a1; intensity: 3.2; distance: 26; decay: 2"
+                  position="0 0.95 0">
+          <a-animation attribute="light.intensity" from="2.4" to="3.8"
+                       dur="200" direction="alternate" repeat="indefinite"></a-animation>
         </a-entity>
+
+        <a-entity light="type: point; color:#ff8a3d; intensity: 0.9; distance: 10; decay: 2"
+                  position="0 0.45 0"></a-entity>
       </a-entity>
 
-      <!-- Log Cabin (enterable) -->
-      <!-- Door faces toward the campfire-ish -->
-      <a-entity id="cabin" position="8 0 -7" rotation="0 -20 0">
+      <!-- Ring of Rocks.glb (HALF as many, jittered) -->
+      <a-entity id="rockRing"></a-entity>
 
+      <!-- Log Cabin -->
+      <a-entity id="cabin" position="8 0 -7" rotation="0 -20 0">
         <!-- Floor -->
         <a-plane position="0 0.01 0" rotation="-90 0 0" width="6.5" height="6.5" color="#2a2a2a"></a-plane>
 
@@ -74,64 +79,68 @@
         <a-cylinder radius="0.13" height="2.7" position="-3 1.35 -3" color="#5b3a1f"></a-cylinder>
         <a-cylinder radius="0.13" height="2.7" position=" 3 1.35 -3" color="#5b3a1f"></a-cylinder>
 
-        <!-- Stacked log walls -->
-        <!-- Main idea:
-             - Front wall has a door HOLE (gap in middle)
-             - Back/side walls are continuous
-        -->
+        <!-- Log walls generated by JS -->
         <a-entity id="logs"></a-entity>
 
-        <!-- Roof (gable-ish): two sloped panels + ridge beam -->
-        <a-box depth="7.2" height="4.6" width="0.12" color="#2a1c12"
-               position="-1.95 3.1 0" rotation="0 0 35"></a-box>
-        <a-box depth="7.2" height="4.6" width="0.12" color="#2a1c12"
-               position=" 1.95 3.1 0" rotation="0 0 -35"></a-box>
+        <!-- FIXED ROOF: thin panels (NOT giant wedges) -->
+        <a-box depth="7.2" width="3.9" height="0.18" color="#2a1c12"
+               position="-1.95 3.25 0" rotation="0 0 35"></a-box>
+        <a-box depth="7.2" width="3.9" height="0.18" color="#2a1c12"
+               position=" 1.95 3.25 0" rotation="0 0 -35"></a-box>
 
-        <a-cylinder radius="0.07" height="7.2" color="#3a2617"
-                    position="0 4.05 0" rotation="90 0 0"></a-cylinder>
+        <!-- Ridge beam -->
+        <a-cylinder radius="0.06" height="7.2" color="#3a2617"
+                    position="0 3.95 0" rotation="90 0 0"></a-cylinder>
 
         <!-- Porch step -->
         <a-box width="2.4" height="0.15" depth="0.9" color="#1f1f1f"
                position="0 0.08 3.2"></a-box>
 
-        <!-- Barrels next to doorway (GLB) -->
-        <!-- NOTE: raised slightly + big scale so you can actually see them -->
-        <a-entity id="barrelA" gltf-model="./Medieval_Barrel.glb"
-                  position="1.9 0.05 2.9" rotation="0 -20 0" scale="8 8 8"></a-entity>
-        <a-entity id="barrelB" gltf-model="./Medieval_Barrel.glb"
-                  position="2.6 0.05 2.4" rotation="0 15 0" scale="8 8 8"></a-entity>
+        <!-- Barrels: GUARANTEED (primitive fallback) -->
+        <a-entity id="barrelFallback" position="2.1 0 2.75">
+          <!-- barrel 1 -->
+          <a-entity position="0 0 0" rotation="0 -20 0">
+            <a-cylinder radius="0.28" height="0.55" position="0 0.28 0" color="#6a4527"></a-cylinder>
+            <a-cylinder radius="0.29" height="0.02" position="0 0.55 0" color="#3a2617"></a-cylinder>
+            <a-cylinder radius="0.29" height="0.02" position="0 0.01 0" color="#3a2617"></a-cylinder>
+            <a-torus radius="0.28" radius-tubular="0.02" position="0 0.40 0" rotation="90 0 0" color="#242424"></a-torus>
+            <a-torus radius="0.28" radius-tubular="0.02" position="0 0.20 0" rotation="90 0 0" color="#242424"></a-torus>
+          </a-entity>
 
-        <!-- Doorway is just open air; we create no geometry there -->
+          <!-- barrel 2 -->
+          <a-entity position="0.65 0 -0.35" rotation="0 15 0">
+            <a-cylinder radius="0.28" height="0.55" position="0 0.28 0" color="#6a4527"></a-cylinder>
+            <a-cylinder radius="0.29" height="0.02" position="0 0.55 0" color="#3a2617"></a-cylinder>
+            <a-cylinder radius="0.29" height="0.02" position="0 0.01 0" color="#3a2617"></a-cylinder>
+            <a-torus radius="0.28" radius-tubular="0.02" position="0 0.40 0" rotation="90 0 0" color="#242424"></a-torus>
+            <a-torus radius="0.28" radius-tubular="0.02" position="0 0.20 0" rotation="90 0 0" color="#242424"></a-torus>
+          </a-entity>
+        </a-entity>
+
+        <!-- Optional GLB barrels: if they load, swap them in automatically -->
+        <a-entity id="barrelGLB1" gltf-model="./Medieval_Barrel.glb"
+                  visible="false" position="2.2 0.05 2.9" rotation="0 -20 0" scale="8 8 8"></a-entity>
+        <a-entity id="barrelGLB2" gltf-model="./Medieval_Barrel.glb"
+                  visible="false" position="2.85 0.05 2.45" rotation="0 15 0" scale="8 8 8"></a-entity>
       </a-entity>
 
-      <!-- A far rock kept (optional landmark) -->
-      <a-entity gltf-model="./Rocks.glb" position="-10 0 -10" rotation="0 30 0" scale="1 1 1"></a-entity>
-
-      <!-- Tree container + Rock ring container -->
+      <!-- Tree container -->
       <a-entity id="forest"></a-entity>
-      <a-entity id="rockRing"></a-entity>
 
       <script>
-        // ---------- Cabin wall generator (stacked log look) ----------
+        // --------- Cabin logs (same idea as before, with a door hole) ---------
         (function buildCabinLogs(){
           const cabin = document.getElementById('cabin');
           const logs = cabin.querySelector('#logs');
 
-          const rows = 10;            // more rows = more "log cabin" look
-          const y0 = 0.25;
-          const dy = 0.23;
-          const radius = 0.13;
+          const rows = 10;
+          const y0 = 0.25, dy = 0.23, radius = 0.13;
 
-          const W = 6.2;  // cabin inside width approx
-          const D = 6.2;  // cabin inside depth approx
-          const zFront = 3.0;
-          const zBack  = -3.0;
-          const xLeft  = -3.0;
-          const xRight = 3.0;
+          const W = 6.2, D = 6.2;
+          const zFront = 3.0, zBack = -3.0, xLeft = -3.0, xRight = 3.0;
 
-          // Door hole dimensions (front wall)
-          const doorHalf = 0.8;   // half-width of door gap
-          const doorTopY = 1.8;   // height of door opening
+          const doorHalf = 0.8;
+          const doorTopY = 1.8;
 
           function addLog(pos, rot, length, y){
             const e = document.createElement('a-cylinder');
@@ -146,39 +155,26 @@
           for (let i=0; i<rows; i++){
             const y = y0 + i*dy;
 
-            // Back wall (continuous, along X)
-            // Cylinder axis is Y, so rotate around Z 90 to make it run along X.
+            // back
             addLog({x:0, z:zBack}, {x:0,y:0,z:90}, W, y);
-
-            // Left wall (continuous, along Z) => rotate around X 90
+            // sides
             addLog({x:xLeft, z:0}, {x:90,y:0,z:0}, D, y);
-
-            // Right wall
             addLog({x:xRight, z:0}, {x:90,y:0,z:0}, D, y);
 
-            // Front wall: leave hole for door until doorTopY
+            // front with doorway gap
             if (y <= doorTopY){
-              // left segment
-              const leftLen = (W/2 - doorHalf);
-              const leftCenterX = -(doorHalf + leftLen/2);
-              addLog({x:leftCenterX, z:zFront}, {x:0,y:0,z:90}, leftLen, y);
-
-              // right segment
-              const rightLen = (W/2 - doorHalf);
-              const rightCenterX = (doorHalf + rightLen/2);
-              addLog({x:rightCenterX, z:zFront}, {x:0,y:0,z:90}, rightLen, y);
+              const segLen = (W/2 - doorHalf);
+              addLog({x:-(doorHalf + segLen/2), z:zFront}, {x:0,y:0,z:90}, segLen, y);
+              addLog({x:(doorHalf + segLen/2),  z:zFront}, {x:0,y:0,z:90}, segLen, y);
             } else {
-              // above doorway, close the front wall fully
               addLog({x:0, z:zFront}, {x:0,y:0,z:90}, W, y);
             }
           }
         })();
 
-        // ---------- Exponentially more trees (procedural forest) ----------
+        // --------- Procedural forest (dense) ---------
         (function populateForest(){
           const forest = document.getElementById('forest');
-
-          // Keep a clearing around campfire and cabin
           const clearFire = {x:0, z:-4, r:7};
           const clearCabin = {x:8, z:-7, r:7};
 
@@ -215,51 +211,59 @@
             return t;
           }
 
-          const N = 420; // "tons" of trees without murdering performance
+          const N = 420;
           const RANGE = 40;
 
           let placed = 0;
           while (placed < N){
             const x = (Math.random()*2 - 1) * RANGE;
             const z = (Math.random()*2 - 1) * RANGE;
-
             if (tooClose(x,z,clearFire) || tooClose(x,z,clearCabin)) continue;
-
-            const s = 0.9 + Math.random()*1.0;
-            forest.appendChild(makeTree(x,z,s));
+            forest.appendChild(makeTree(x,z,0.9 + Math.random()*1.0));
             placed++;
           }
         })();
 
-        // ---------- Ring of Rocks.glb around the fire ----------
+        // --------- Rocks around fire: 6, jittered (less symmetric) ---------
         (function ringOfRocks(){
           const ring = document.getElementById('rockRing');
-          const cx = 0, cz = -4;          // fire spot
-          const count = 12;
-          const r = 2.4;
+          const cx = 0, cz = -4;
+          const count = 6;
+          const baseR = 2.35;
 
           for (let i=0; i<count; i++){
             const a = (i / count) * Math.PI * 2;
-            const x = cx + Math.cos(a)*r;
-            const z = cz + Math.sin(a)*r;
+            const jitterR = baseR + (Math.random()*0.6 - 0.3);
+            const jitterA = a + (Math.random()*0.35 - 0.175);
+
+            const x = cx + Math.cos(jitterA) * jitterR;
+            const z = cz + Math.sin(jitterA) * jitterR;
 
             const rock = document.createElement('a-entity');
             rock.setAttribute('gltf-model', './Rocks.glb');
             rock.setAttribute('position', `${x} 0 ${z}`);
             rock.setAttribute('rotation', `0 ${Math.random()*360} 0`);
-            rock.setAttribute('scale', `0.75 0.75 0.75`);
+            const s = 0.6 + Math.random()*0.35;
+            rock.setAttribute('scale', `${s} ${s} ${s}`);
             ring.appendChild(rock);
           }
         })();
 
-        // ---------- Debug: if barrels fail to load, you can see it in console ----------
-        (function addModelDebug(){
-          const ids = ['barrelA','barrelB'];
-          ids.forEach(id=>{
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener('model-loaded', () => console.log(id, 'loaded'));
-            el.addEventListener('model-error', (e) => console.log(id, 'MODEL ERROR', e.detail));
+        // --------- If barrel GLB loads, swap it in; otherwise keep primitive barrels ---------
+        (function barrelSwap(){
+          const fallback = document.getElementById('barrelFallback');
+          const b1 = document.getElementById('barrelGLB1');
+          const b2 = document.getElementById('barrelGLB2');
+
+          b1.addEventListener('model-loaded', () => {
+            fallback.setAttribute('visible', 'false');
+            b1.setAttribute('visible', 'true');
+            b2.setAttribute('visible', 'true');
+            console.log('Barrel GLB loaded -> using GLB barrels');
+          });
+
+          b1.addEventListener('model-error', (e) => {
+            console.log('Barrel GLB failed to load -> using primitive barrels instead', e.detail);
           });
         })();
       </script>
