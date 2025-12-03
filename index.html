@@ -155,7 +155,10 @@
       <a-entity id="rockRing"></a-entity>
 
       <!-- =========================================================
-           7) CABIN (raised floor, walls use wood texture)
+           7) CABIN
+           - Raised floor so logs don't float
+           - Flat roof
+           - Door marker controls barrel placement (fixes barrel "missing")
       ========================================================== -->
       <a-entity id="cabin" position="8 0 -7" rotation="0 -20 0">
         <!-- Raised floor -->
@@ -198,22 +201,27 @@
           position="0 0.10 3.65"
         ></a-box>
 
-        <!-- Barrels (GLB) — SHRUNK DOWN A TON -->
-        <a-entity
-          id="barrel1"
-          gltf-model="#barrelModel"
-          position="2.1 0.70 2.7"
-          rotation="0 -20 0"
-          scale="1.5 1.5 1.5"
-        ></a-entity>
+        <!-- Door marker = front-center reference point for barrel placement -->
+        <a-entity id="doorMarker" position="0 0.45 3.35">
+          <!-- Barrels placed relative to the door marker -->
+          <a-entity id="doorBarrels">
+            <a-entity
+              id="barrel1"
+              gltf-model="#barrelModel"
+              position="0.55 0.00 0.35"
+              rotation="0 -20 0"
+              scale="1.5 1.5 1.5"
+            ></a-entity>
 
-        <a-entity
-          id="barrel2"
-          gltf-model="#barrelModel"
-          position="2.8 0.70 2.2"
-          rotation="0 15 0"
-          scale="1.5 1.5 1.5"
-        ></a-entity>
+            <a-entity
+              id="barrel2"
+              gltf-model="#barrelModel"
+              position="-0.55 0.00 0.35"
+              rotation="0 15 0"
+              scale="1.5 1.5 1.5"
+            ></a-entity>
+          </a-entity>
+        </a-entity>
       </a-entity>
 
       <!-- =========================================================
