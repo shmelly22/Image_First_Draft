@@ -11,11 +11,6 @@
     <a-scene renderer="antialias:true" background="color:#0b1320">
       <!-- =========================================================
            1) ASSETS (textures + models)
-           Files in SAME folder as index.html:
-           - grass_texture.jpg
-           - wood_texture.jpg
-           - Rocks.glb
-           - Medieval_Barrel.glb
       ========================================================== -->
       <a-assets>
         <!-- Textures -->
@@ -28,7 +23,7 @@
       </a-assets>
 
       <!-- =========================================================
-           2) CAMERA / PLAYER (no cursor)
+           2) CAMERA / PLAYER
       ========================================================== -->
       <a-entity camera look-controls wasd-controls position="0 1.6 7"></a-entity>
 
@@ -62,7 +57,7 @@
       ></a-plane>
 
       <!-- =========================================================
-           5) CAMPFIRE (logs use wood texture)
+           5) CAMPFIRE
       ========================================================== -->
       <a-entity id="campfire" position="0 0 -4">
         <!-- Stone ring -->
@@ -150,16 +145,22 @@
       </a-entity>
 
       <!-- =========================================================
-           6) ROCK RING (populated by JS)
+           6) ROCK RING
       ========================================================== -->
       <a-entity id="rockRing"></a-entity>
 
       <!-- =========================================================
-           7) CABIN (door marker controls barrel placement)
+           7) CABIN + BARREL
       ========================================================== -->
       <a-entity id="cabin" position="8 0 -7" rotation="0 -20 0">
         <!-- Raised floor -->
-        <a-box width="6.6" height="0.45" depth="6.6" position="0 0.225 0" color="#2a2a2a"></a-box>
+        <a-box
+          width="6.6"
+          height="0.45"
+          depth="6.6"
+          position="0 0.225 0"
+          color="#2a2a2a"
+        ></a-box>
 
         <!-- Corner posts -->
         <a-cylinder
@@ -191,62 +192,64 @@
         <a-entity id="logs"></a-entity>
 
         <!-- Flat roof -->
-        <a-box width="7.1" height="0.18" depth="7.1" position="0 2.92 0" color="#2a1c12"></a-box>
+        <a-box
+          width="7.1"
+          height="0.18"
+          depth="7.1"
+          position="0 2.92 0"
+          color="#2a1c12"
+        ></a-box>
 
         <!-- Porch step -->
-        <a-box width="2.4" height="0.15" depth="0.9" color="#1f1f1f" position="0 0.10 3.65"></a-box>
+        <a-box
+          width="2.4"
+          height="0.15"
+          depth="0.9"
+          color="#1f1f1f"
+          position="0 0.10 3.65"
+        ></a-box>
 
-        <!-- Door marker (front-center reference point) -->
+        <!-- Door marker: we still use it as a reference, but now just 1 barrel,
+             rotated 180° and dropped to the ground in front of the porch. -->
         <a-entity id="doorMarker" position="0 0.45 3.35">
-          <!-- Barrels: wrapper controls scale/placement, model snaps to ground after load -->
-          <a-entity position="0.65 0.05 0.35" rotation="0 20 0" scale="0.03 0.03 0.03">
-            <a-entity gltf-model="#barrelModel" auto-ground></a-entity>
-          </a-entity>
-
-          <a-entity position="-0.55 0.05 0.30" rotation="0 -25 0" scale="0.03 0.03 0.03">
+          <a-entity
+            position="0 -0.45 1.1"
+            rotation="0 180 0"
+            scale="0.03 0.03 0.03"
+          >
             <a-entity gltf-model="#barrelModel" auto-ground></a-entity>
           </a-entity>
         </a-entity>
       </a-entity>
 
       <!-- =========================================================
-           8) FOREST (trees populated by JS)
+           8) FOREST
       ========================================================== -->
       <a-entity id="forest"></a-entity>
 
       <script>
-        /* =========================================================
-           COMPONENT: auto-ground
-           Fixes GLBs that load "buried" because their pivot/origin is below the mesh.
-           It shifts the mesh so its lowest point sits on y=0 inside its parent wrapper.
-        ========================================================== */
+        /* COMPONENT: auto-ground
+           Snap GLBs so their lowest point sits on y=0 inside the wrapper.
+        */
         AFRAME.registerComponent('auto-ground', {
           init: function () {
             this.el.addEventListener('model-loaded', () => {
               const mesh = this.el.getObject3D('mesh');
               if (!mesh) return;
-
               const THREE = AFRAME.THREE;
               const box = new THREE.Box3().setFromObject(mesh);
               const minY = box.min.y;
-
-              mesh.position.y -= minY; // lift upwards so bottom touches y=0
+              mesh.position.y -= minY;
             });
           }
         });
 
-        /* =========================================================
-           A) CABIN LOG WALLS (stacked cylinders + doorway hole)
-        ========================================================== */
+        /* A) CABIN LOG WALLS */
         (function buildCabinLogs() {
           const logs = document.querySelector('#cabin #logs');
 
-          const W = 6.2,
-            D = 6.2;
-          const zFront = 3.0,
-            zBack = -3.0,
-            xLeft = -3.0,
-            xRight = 3.0;
+          const W = 6.2, D = 6.2;
+          const zFront = 3.0, zBack = -3.0, xLeft = -3.0, xRight = 3.0;
 
           const rows = 10;
           const radius = 0.13;
@@ -289,9 +292,7 @@
           }
         })();
 
-        /* =========================================================
-           B) FOREST GENERATOR
-        ========================================================== */
+        /* B) FOREST GENERATOR */
         (function populateForest() {
           const forest = document.getElementById('forest');
           const clearFire = { x: 0, z: -4, r: 7 };
@@ -345,13 +346,10 @@
           }
         })();
 
-        /* =========================================================
-           C) ROCK RING (GLB instances)
-        ========================================================== */
+        /* C) ROCK RING */
         (function ringOfRocks() {
           const ring = document.getElementById('rockRing');
-          const cx = 0,
-            cz = -4;
+          const cx = 0, cz = -4;
           const count = 6;
           const baseR = 3.4;
 
