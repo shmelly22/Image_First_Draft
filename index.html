@@ -5,28 +5,204 @@
     <title>Forest Campfire + Log Cabin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+
+    <script>
+      /* =========================================================
+         0) PROCEDURAL TEXTURE COMPONENT (REGISTERED BEFORE SCENE)
+         Why: If the component is registered after the scene starts,
+              A-Frame can miss applying it reliably.
+         Use: proc-tex="kind: grass|bark; repeatX: #; repeatY:#"
+      ========================================================== */
+      AFRAME.registerComponent("proc-tex", {
+        schema: {
+          kind: { default: "grass" }, // "grass" or "bark"
+          repeatX: { type: "number", default: 8 },
+          repeatY: { type: "number", default: 8 },
+        },
+
+        init() {
+          this.canvas = document.createElement("canvas");
+          this.canvas.width = 512;
+          this.canvas.height = 512;
+          this.ctx = this.canvas.getContext("2d");
+
+          this.draw();
+          this.apply = this.apply.bind(this);
+
+          // Apply to primitives and to loaded glTF meshes
+          this.el.addEventListener("object3dset", this.apply);
+          this.el.addEventListener("model-loaded", this.apply);
+
+          // Try immediately as well
+          this.apply();
+        },
+
+        draw() {
+          const ctx = this.ctx;
+          const W = this.canvas.width;
+          const H = this.canvas.height;
+
+          // helper
+          const rand = (a, b) => a + Math.random() * (b - a);
+
+          if (this.data.kind === "grass") {
+            // Base gradient (gives depth)
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0, "#1c4f26");
+            g.addColorStop(1, "#163c1e");
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            // Soft mottling (patches)
+            for (let i = 0; i < 1800; i++) {
+              const x = Math.random() * W;
+              const y = Math.random() * H;
+              const r = rand(6, 22);
+              const alpha = rand(0.03, 0.09);
+              ctx.fillStyle = `rgba(40,120,55,${alpha})`;
+              ctx.beginPath();
+              ctx.ellipse(x, y, r, r * rand(0.6, 1.1), 0, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            // Thin grass blades
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 6000; i++) {
+              const x = Math.random() * W;
+              const y = Math.random() * H;
+              const h = rand(6, 26);
+              const dx = rand(-3, 3);
+
+              const green = Math.floor(rand(110, 200));
+              ctx.strokeStyle = `rgba(50,${green},70,0.18)`;
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x + dx, y - h);
+              ctx.stroke();
+            }
+
+            // A few darker strands for contrast
+            for (let i = 0; i < 1400; i++) {
+              const x = Math.random() * W;
+              const y = Math.random() * H;
+              const h = rand(8, 22);
+              const dx = rand(-2, 2);
+              ctx.strokeStyle = "rgba(10,30,15,0.12)";
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x + dx, y - h);
+              ctx.stroke();
+            }
+          } else {
+            // BARK: base
+            ctx.fillStyle = "#5a3a22";
+            ctx.fillRect(0, 0, W, H);
+
+            // Vertical grain strips
+            for (let x = 0; x < W; x++) {
+              const v = 40 + Math.random() * 40;
+              ctx.strokeStyle = `rgba(${70 + v},${45 + v * 0.6},${25 + v * 0.35},0.22)`;
+              ctx.beginPath();
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, H);
+              ctx.stroke();
+            }
+
+            // Dark creases
+            for (let i = 0; i < 1200; i++) {
+              const x = Math.random() * W;
+              const y = Math.random() * H;
+              const w = rand(6, 26);
+              const a = rand(0.05, 0.18);
+              ctx.fillStyle = `rgba(15,10,8,${a})`;
+              ctx.fillRect(x, y, w, 1);
+            }
+
+            // Knots
+            for (let i = 0; i < 120; i++) {
+              const x = Math.random() * W;
+              const y = Math.random() * H;
+              ctx.strokeStyle = "rgba(10,6,5,0.22)";
+              ctx.lineWidth = rand(1, 2);
+              ctx.beginPath();
+              ctx.ellipse(x, y, rand(10, 28), rand(6, 18), rand(0, Math.PI), 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
+        },
+
+        apply() {
+          const mesh = this.el.getObject3D("mesh");
+          if (!mesh) return;
+
+          // Create a THREE texture from the canvas
+          const tex = new THREE.CanvasTexture(this.canvas);
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(this.data.repeatX, this.data.repeatY);
+          tex.anisotropy = 8;
+
+          // Apply to every mesh/material inside this entity
+          mesh.traverse((node) => {
+            if (!node.isMesh) return;
+            const mats = Array.isArray(node.material) ? node.material : [node.material];
+            mats.forEach((m) => {
+              if (!m) return;
+              m.map = tex;
+              m.roughness = 1.0;
+              m.metalness = 0.0;
+              m.needsUpdate = true;
+            });
+          });
+        },
+      });
+    </script>
   </head>
 
   <body>
     <a-scene renderer="antialias:true" background="color:#0b1320">
-      <!-- Camera (NO cursor) -->
+      <!-- =========================================================
+           1) ASSETS (PRELOAD GLB FILES)
+           Why: keeps file paths consistent and avoids timing issues.
+      ========================================================== -->
+      <a-assets>
+        <a-asset-item id="rockModel" src="./Rocks.glb"></a-asset-item>
+        <a-asset-item id="barrelModel" src="./Medieval_Barrel.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- =========================================================
+           2) PLAYER / CAMERA (NO CURSOR)
+      ========================================================== -->
       <a-entity camera look-controls wasd-controls position="0 1.6 7"></a-entity>
 
-      <!-- Sky + Moon -->
+      <!-- =========================================================
+           3) SKY + MOON + GLOBAL LIGHTING
+      ========================================================== -->
       <a-sky color="#0b1320"></a-sky>
-      <a-sphere position="-12 12 -28" radius="1.35"
-                material="color:#eef4ff; emissive:#eef4ff; emissiveIntensity:0.45"></a-sphere>
+      <a-sphere
+        position="-12 12 -28"
+        radius="1.35"
+        material="color:#eef4ff; emissive:#eef4ff; emissiveIntensity:0.45"
+      ></a-sphere>
 
-      <!-- Lighting -->
       <a-entity light="type: ambient; intensity: 0.28; color: #8aa0b8"></a-entity>
       <a-entity light="type: directional; intensity: 0.65; color: #bcd6ff" position="-6 10 -8"></a-entity>
 
-      <!-- Ground (grass texture via component) -->
-      <a-plane id="ground" position="0 0 0" rotation="-90 0 0" width="90" height="90"
-               material="roughness:1; metalness:0"
-               canvas-texture="kind: grass; repeatX: 18; repeatY: 18"></a-plane>
+      <!-- =========================================================
+           4) GROUND (IMPROVED GRASS TEXTURE)
+      ========================================================== -->
+      <a-plane
+        id="ground"
+        position="0 0 0"
+        rotation="-90 0 0"
+        width="90"
+        height="90"
+        material="roughness:1; metalness:0"
+        proc-tex="kind: grass; repeatX: 12; repeatY: 12"
+      ></a-plane>
 
-      <!-- Campfire -->
+      <!-- =========================================================
+           5) CAMPSITE (FIRE + LIGHT)
+      ========================================================== -->
       <a-entity id="campfire" position="0 0 -4">
         <!-- Stone ring -->
         <a-sphere radius="0.18" position="0.85 0.10 0.00" color="#6e737a"></a-sphere>
@@ -38,197 +214,112 @@
         <a-sphere radius="0.18" position="0.00 0.10 -0.85" color="#6e737a"></a-sphere>
         <a-sphere radius="0.18" position="0.60 0.10 -0.60" color="#6e737a"></a-sphere>
 
-        <!-- Logs (bark texture) -->
+        <!-- Logs (bark) -->
         <a-cylinder radius="0.09" height="1.7" position="0 0.18 0" rotation="90 35 0"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 2; repeatY: 1"></a-cylinder>
+          material="roughness:1; metalness:0" proc-tex="kind: bark; repeatX: 3; repeatY: 1"></a-cylinder>
         <a-cylinder radius="0.09" height="1.7" position="0 0.18 0" rotation="90 -35 0"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 2; repeatY: 1"></a-cylinder>
+          material="roughness:1; metalness:0" proc-tex="kind: bark; repeatX: 3; repeatY: 1"></a-cylinder>
 
         <!-- Flame -->
         <a-cone radius-bottom="0.36" radius-top="0.02" height="1.05" position="0 0.58 0"
-                material="color:#ffbf57; emissive:#ffbf57; emissiveIntensity:1.35; opacity:0.97">
-          <a-animation attribute="scale" from="1 1 1" to="1.18 1.32 1.18"
-                       dur="300" direction="alternate" repeat="indefinite"></a-animation>
-        </a-cone>
-        <a-cone radius-bottom="0.24" radius-top="0.01" height="0.9" position="0 0.70 0"
-                material="color:#ff5a3a; emissive:#ff5a3a; emissiveIntensity:1.45; opacity:0.92">
-          <a-animation attribute="rotation" from="0 0 0" to="0 22 0"
-                       dur="420" direction="alternate" repeat="indefinite"></a-animation>
+          material="color:#ffbf57; emissive:#ffbf57; emissiveIntensity:1.35; opacity:0.97">
+          <a-animation attribute="scale" from="1 1 1" to="1.18 1.32 1.18" dur="300" direction="alternate" repeat="indefinite"></a-animation>
         </a-cone>
 
-        <!-- Make fire brighter -->
-        <a-entity id="fireLight"
-                  light="type: point; color:#ffd2a1; intensity: 4.2; distance: 30; decay: 2"
-                  position="0 0.95 0">
-          <a-animation attribute="light.intensity" from="3.4" to="4.8"
-                       dur="180" direction="alternate" repeat="indefinite"></a-animation>
+        <a-cone radius-bottom="0.24" radius-top="0.01" height="0.9" position="0 0.70 0"
+          material="color:#ff5a3a; emissive:#ff5a3a; emissiveIntensity:1.45; opacity:0.92">
+          <a-animation attribute="rotation" from="0 0 0" to="0 22 0" dur="420" direction="alternate" repeat="indefinite"></a-animation>
+        </a-cone>
+
+        <!-- Fire light -->
+        <a-entity id="fireLight" light="type: point; color:#ffd2a1; intensity: 4.2; distance: 30; decay: 2"
+          position="0 0.95 0">
+          <a-animation attribute="light.intensity" from="3.4" to="4.8" dur="180" direction="alternate" repeat="indefinite"></a-animation>
         </a-entity>
-        <a-entity light="type: point; color:#ff8a3d; intensity: 1.2; distance: 12; decay: 2"
-                  position="0 0.45 0"></a-entity>
+        <a-entity light="type: point; color:#ff8a3d; intensity: 1.2; distance: 12; decay: 2" position="0 0.45 0"></a-entity>
       </a-entity>
 
-      <!-- Ring of Rocks.glb (farther from fire) -->
+      <!-- =========================================================
+           6) ROCK RING (GLB INSTANCES)
+      ========================================================== -->
       <a-entity id="rockRing"></a-entity>
 
-      <!-- Log Cabin -->
+      <!-- =========================================================
+           7) CABIN (FIXED)
+           Changes you requested:
+           - floor raised so walls don't float
+           - NO ridge beam
+           - roof is ONE flat surface that sits on top of the walls
+      ========================================================== -->
       <a-entity id="cabin" position="8 0 -7" rotation="0 -20 0">
-        <!-- Floor -->
-        <a-plane position="0 0.01 0" rotation="-90 0 0" width="6.5" height="6.5" color="#2a2a2a"></a-plane>
+        <!-- Raised floor block (so the cabin feels grounded) -->
+        <a-box id="cabinFloor" width="6.6" height="0.45" depth="6.6" position="0 0.225 0"
+          color="#2a2a2a"></a-box>
 
         <!-- Corner posts (bark texture) -->
-        <a-cylinder radius="0.13" height="2.7" position="-3 1.35  3"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
-        <a-cylinder radius="0.13" height="2.7" position=" 3 1.35  3"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
-        <a-cylinder radius="0.13" height="2.7" position="-3 1.35 -3"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
-        <a-cylinder radius="0.13" height="2.7" position=" 3 1.35 -3"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
+        <a-cylinder radius="0.13" height="2.7" position="-3 1.55  3"
+          material="roughness:1; metalness:0" proc-tex="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
+        <a-cylinder radius="0.13" height="2.7" position=" 3 1.55  3"
+          material="roughness:1; metalness:0" proc-tex="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
+        <a-cylinder radius="0.13" height="2.7" position="-3 1.55 -3"
+          material="roughness:1; metalness:0" proc-tex="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
+        <a-cylinder radius="0.13" height="2.7" position=" 3 1.55 -3"
+          material="roughness:1; metalness:0" proc-tex="kind: bark; repeatX: 2; repeatY: 2"></a-cylinder>
 
-        <!-- Log walls generated by JS -->
+        <!-- Generated log walls go here -->
         <a-entity id="logs"></a-entity>
 
-        <!-- Roof -->
-        <a-box depth="7.2" width="3.9" height="0.18" color="#2a1c12"
-               position="-1.95 3.25 0" rotation="0 0 35"></a-box>
-        <a-box depth="7.2" width="3.9" height="0.18" color="#2a1c12"
-               position=" 1.95 3.25 0" rotation="0 0 -35"></a-box>
+        <!-- ONE flat roof panel sitting on top of the wall height -->
+        <a-box id="roof" width="7.1" height="0.18" depth="7.1" position="0 2.92 0"
+          color="#2a1c12"></a-box>
 
-        <!-- Ridge beam (bark) -->
-        <a-cylinder radius="0.06" height="7.2" position="0 3.95 0" rotation="90 0 0"
-                    material="roughness:1; metalness:0"
-                    canvas-texture="kind: bark; repeatX: 4; repeatY: 1"></a-cylinder>
+        <!-- Porch step (aligned with raised floor) -->
+        <a-box width="2.4" height="0.15" depth="0.9" color="#1f1f1f" position="0 0.10 3.65"></a-box>
 
-        <!-- Porch step -->
-        <a-box width="2.4" height="0.15" depth="0.9" color="#1f1f1f" position="0 0.08 3.2"></a-box>
+        <!-- Barrels (GLB) -->
+        <a-entity id="barrel1" gltf-model="#barrelModel"
+          position="2.1 0.70 2.7" rotation="0 -20 0" scale="25 25 25"></a-entity>
+        <a-entity id="barrel2" gltf-model="#barrelModel"
+          position="2.8 0.70 2.2" rotation="0 15 0" scale="25 25 25"></a-entity>
 
-        <!-- Barrels MUST be GLB -->
-        <!-- Lifted + huge scale for pivot weirdness -->
-        <a-entity id="barrel1" gltf-model="./Medieval_Barrel.glb"
-                  position="2.1 0.8 2.7" rotation="0 -20 0" scale="25 25 25"></a-entity>
-        <a-entity id="barrel2" gltf-model="./Medieval_Barrel.glb"
-                  position="2.8 0.8 2.2" rotation="0 15 0" scale="25 25 25"></a-entity>
+        <!-- If barrels fail to load, show a sign (so you know it's not placement/scale) -->
+        <a-entity id="barrelErrorSign" visible="false" position="0 1.8 3.2">
+          <a-plane width="3.6" height="0.7" color="#3b0f0f" opacity="0.9"></a-plane>
+          <a-text value="BARREL GLB FAILED TO LOAD\n(see console)" align="center" color="#ffdada"
+                  position="0 0 0.01" width="4.5"></a-text>
+        </a-entity>
       </a-entity>
 
-      <!-- Tree container -->
+      <!-- =========================================================
+           8) FOREST (PROCEDURAL TREES)
+      ========================================================== -->
       <a-entity id="forest"></a-entity>
 
       <script>
-        // --- Procedural texture component (no image files needed) ---
-        AFRAME.registerComponent('canvas-texture', {
-          schema: {
-            kind: {default: 'bark'},   // 'bark' or 'grass'
-            repeatX: {type: 'number', default: 4},
-            repeatY: {type: 'number', default: 4}
-          },
-          init: function () {
-            this.canvas = document.createElement('canvas');
-            this.canvas.width = 256;
-            this.canvas.height = 256;
-            this.ctx = this.canvas.getContext('2d');
-
-            this.draw();
-            this.apply = this.apply.bind(this);
-
-            this.el.addEventListener('object3dset', this.apply);
-            this.el.addEventListener('model-loaded', this.apply);
-            this.apply();
-          },
-          draw: function () {
-            const ctx = this.ctx;
-            const k = this.data.kind;
-
-            if (k === 'grass') {
-              // base
-              ctx.fillStyle = '#18451f';
-              ctx.fillRect(0,0,256,256);
-
-              // speckle
-              for (let i=0; i<8000; i++){
-                const x = Math.random()*256, y = Math.random()*256;
-                const g = 80 + Math.random()*80;
-                ctx.fillStyle = `rgb(20,${g},30)`;
-                ctx.fillRect(x,y,1,1);
-              }
-
-              // blades
-              for (let i=0; i<900; i++){
-                const x = Math.random()*256, y = Math.random()*256;
-                const h = 4 + Math.random()*10;
-                ctx.strokeStyle = `rgba(40,${120+Math.random()*80},50,0.35)`;
-                ctx.beginPath();
-                ctx.moveTo(x,y);
-                ctx.lineTo(x+(-2+Math.random()*4), y-h);
-                ctx.stroke();
-              }
-            } else {
-              // bark
-              ctx.fillStyle = '#5b3a1f';
-              ctx.fillRect(0,0,256,256);
-
-              // vertical grain
-              for (let x=0; x<256; x++){
-                const v = 40 + Math.random()*35;
-                ctx.strokeStyle = `rgba(${70+v},${45+v*0.6},${25+v*0.35},0.35)`;
-                ctx.beginPath();
-                ctx.moveTo(x,0);
-                ctx.lineTo(x,256);
-                ctx.stroke();
-              }
-
-              // knots / cracks
-              for (let i=0; i<70; i++){
-                const x = Math.random()*256, y = Math.random()*256;
-                ctx.strokeStyle = 'rgba(20,12,8,0.35)';
-                ctx.beginPath();
-                ctx.ellipse(x,y, 3+Math.random()*10, 2+Math.random()*6, Math.random()*Math.PI, 0, Math.PI*2);
-                ctx.stroke();
-              }
-            }
-          },
-          apply: function () {
-            const mesh = this.el.getObject3D('mesh');
-            if (!mesh) return;
-
-            const tex = new THREE.CanvasTexture(this.canvas);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(this.data.repeatX, this.data.repeatY);
-
-            mesh.traverse((node) => {
-              if (!node.isMesh) return;
-              if (!node.material) return;
-
-              // handle multi-material
-              const mats = Array.isArray(node.material) ? node.material : [node.material];
-              mats.forEach(m => {
-                m.map = tex;
-                m.roughness = 1.0;
-                m.metalness = 0.0;
-                m.needsUpdate = true;
-              });
-            });
-          }
-        });
-
-        // --------- Cabin logs with bark texture + door hole ---------
+        /* =========================================================
+           A) CABIN LOG WALLS (STACKED CYLINDERS) + DOOR HOLE
+           Note: we offset the wall upward to sit on the raised floor.
+        ========================================================== */
         (function buildCabinLogs(){
           const cabin = document.getElementById('cabin');
           const logs = cabin.querySelector('#logs');
 
-          const rows = 10;
-          const y0 = 0.25, dy = 0.23, radius = 0.13;
-
+          // Cabin dimensions (match floor)
           const W = 6.2, D = 6.2;
           const zFront = 3.0, zBack = -3.0, xLeft = -3.0, xRight = 3.0;
 
+          // Log stack settings
+          const rows = 10;
+          const radius = 0.13;
+          const dy = 0.23;
+
+          // Raised floor top is 0.45 high, so start walls slightly above that
+          const floorTopY = 0.45;
+          const y0 = floorTopY + radius;
+
+          // Door opening on front wall
           const doorHalf = 0.8;
-          const doorTopY = 1.8;
+          const doorTopY = floorTopY + 1.55;
 
           function addLog(pos, rot, length, y){
             const e = document.createElement('a-cylinder');
@@ -237,59 +328,67 @@
             e.setAttribute('position', `${pos.x} ${y} ${pos.z}`);
             e.setAttribute('rotation', `${rot.x} ${rot.y} ${rot.z}`);
             e.setAttribute('material', 'roughness:1; metalness:0');
-            e.setAttribute('canvas-texture', 'kind: bark; repeatX: 3; repeatY: 1');
+            e.setAttribute('proc-tex', 'kind: bark; repeatX: 3; repeatY: 1');
             logs.appendChild(e);
           }
 
-          for (let i=0; i<rows; i++){
-            const y = y0 + i*dy;
+          for (let i = 0; i < rows; i++){
+            const y = y0 + i * dy;
 
-            addLog({x:0, z:zBack}, {x:0,y:0,z:90}, W, y);
-            addLog({x:xLeft, z:0}, {x:90,y:0,z:0}, D, y);
-            addLog({x:xRight, z:0}, {x:90,y:0,z:0}, D, y);
+            // Back wall
+            addLog({x:0, z:zBack}, {x:0, y:0, z:90}, W, y);
 
+            // Side walls
+            addLog({x:xLeft,  z:0}, {x:90, y:0, z:0}, D, y);
+            addLog({x:xRight, z:0}, {x:90, y:0, z:0}, D, y);
+
+            // Front wall with doorway hole
             if (y <= doorTopY){
               const segLen = (W/2 - doorHalf);
-              addLog({x:-(doorHalf + segLen/2), z:zFront}, {x:0,y:0,z:90}, segLen, y);
-              addLog({x:(doorHalf + segLen/2),  z:zFront}, {x:0,y:0,z:90}, segLen, y);
+              addLog({x:-(doorHalf + segLen/2), z:zFront}, {x:0, y:0, z:90}, segLen, y);
+              addLog({x:( doorHalf + segLen/2), z:zFront}, {x:0, y:0, z:90}, segLen, y);
             } else {
-              addLog({x:0, z:zFront}, {x:0,y:0,z:90}, W, y);
+              addLog({x:0, z:zFront}, {x:0, y:0, z:90}, W, y);
             }
           }
         })();
 
-        // --------- Dense procedural forest w/ bark trunks ---------
+        /* =========================================================
+           B) FOREST GENERATOR
+           - Dense trees across the map
+           - Clears space around campfire & cabin
+        ========================================================== */
         (function populateForest(){
           const forest = document.getElementById('forest');
-          const clearFire = {x:0, z:-4, r:7};
-          const clearCabin = {x:8, z:-7, r:7};
+          const clearFire  = { x: 0, z: -4, r: 7 };
+          const clearCabin = { x: 8, z: -7, r: 8 };
 
-          function tooClose(x,z,c){ return ((x-c.x)**2 + (z-c.z)**2) < (c.r**2); }
+          const inClearing = (x, z, c) => ((x - c.x) ** 2 + (z - c.z) ** 2) < (c.r ** 2);
 
           function makeTree(x, z, s){
             const t = document.createElement('a-entity');
             t.setAttribute('position', `${x} 0 ${z}`);
-            t.setAttribute('rotation', `0 ${Math.random()*360} 0`);
+            t.setAttribute('rotation', `0 ${Math.random() * 360} 0`);
 
             const trunk = document.createElement('a-cylinder');
-            trunk.setAttribute('radius', 0.12*s);
-            trunk.setAttribute('height', 2.0*s);
-            trunk.setAttribute('position', `0 ${1.0*s} 0`);
+            trunk.setAttribute('radius', 0.12 * s);
+            trunk.setAttribute('height', 2.0 * s);
+            trunk.setAttribute('position', `0 ${1.0 * s} 0`);
             trunk.setAttribute('material', 'roughness:1; metalness:0');
-            trunk.setAttribute('canvas-texture', 'kind: bark; repeatX: 2; repeatY: 2');
+            trunk.setAttribute('proc-tex', 'kind: bark; repeatX: 2; repeatY: 2');
 
             const c1 = document.createElement('a-cone');
-            c1.setAttribute('radius-bottom', 1.2*s);
+            c1.setAttribute('radius-bottom', 1.2 * s);
             c1.setAttribute('radius-top', 0.08);
-            c1.setAttribute('height', 2.0*s);
-            c1.setAttribute('position', `0 ${2.2*s} 0`);
+            c1.setAttribute('height', 2.0 * s);
+            c1.setAttribute('position', `0 ${2.2 * s} 0`);
             c1.setAttribute('color', '#1f6b3b');
 
             const c2 = document.createElement('a-cone');
-            c2.setAttribute('radius-bottom', 0.95*s);
+            c2.setAttribute('radius-bottom', 0.95 * s);
             c2.setAttribute('radius-top', 0.08);
-            c2.setAttribute('height', 1.7*s);
-            c2.setAttribute('position', `0 ${2.9*s} 0`);
+            c2.setAttribute('height', 1.7 * s);
+            c2.setAttribute('position', `0 ${2.9 * s} 0`);
             c2.setAttribute('color', '#1a5e33');
 
             t.appendChild(trunk);
@@ -298,56 +397,69 @@
             return t;
           }
 
-          const N = 420;
-          const RANGE = 40;
-
+          const N = 520;
+          const RANGE = 42;
           let placed = 0;
+
           while (placed < N){
-            const x = (Math.random()*2 - 1) * RANGE;
-            const z = (Math.random()*2 - 1) * RANGE;
-            if (tooClose(x,z,clearFire) || tooClose(x,z,clearCabin)) continue;
-            forest.appendChild(makeTree(x,z,0.9 + Math.random()*1.0));
+            const x = (Math.random() * 2 - 1) * RANGE;
+            const z = (Math.random() * 2 - 1) * RANGE;
+            if (inClearing(x, z, clearFire) || inClearing(x, z, clearCabin)) continue;
+            forest.appendChild(makeTree(x, z, 0.9 + Math.random() * 1.0));
             placed++;
           }
         })();
 
-        // --------- Rocks around fire: 6, jittered, FARTHER from fire ---------
+        /* =========================================================
+           C) ROCK RING (GLB INSTANCES)
+           - 6 rocks, jittered, farther from fire
+        ========================================================== */
         (function ringOfRocks(){
           const ring = document.getElementById('rockRing');
           const cx = 0, cz = -4;
           const count = 6;
-          const baseR = 3.2; // farther than before
+          const baseR = 3.4;
 
-          for (let i=0; i<count; i++){
+          for (let i = 0; i < count; i++){
             const a = (i / count) * Math.PI * 2;
-            const jitterR = baseR + (Math.random()*0.8 - 0.4);
-            const jitterA = a + (Math.random()*0.35 - 0.175);
+            const jitterR = baseR + (Math.random() * 0.8 - 0.4);
+            const jitterA = a + (Math.random() * 0.35 - 0.175);
 
             const x = cx + Math.cos(jitterA) * jitterR;
             const z = cz + Math.sin(jitterA) * jitterR;
 
             const rock = document.createElement('a-entity');
-            rock.setAttribute('gltf-model', './Rocks.glb');
+            rock.setAttribute('gltf-model', '#rockModel');
             rock.setAttribute('position', `${x} 0 ${z}`);
-            rock.setAttribute('rotation', `0 ${Math.random()*360} 0`);
-            const s = 0.6 + Math.random()*0.35;
+            rock.setAttribute('rotation', `0 ${Math.random() * 360} 0`);
+
+            const s = 0.6 + Math.random() * 0.35;
             rock.setAttribute('scale', `${s} ${s} ${s}`);
+
             ring.appendChild(rock);
           }
         })();
 
-        // --------- Barrel GLB debug: logs REAL error to console ---------
+        /* =========================================================
+           D) BARREL DEBUG
+           - If barrels fail but rocks load, this will tell us WHY.
+        ========================================================== */
         (function barrelDebug(){
+          const sign = document.getElementById('barrelErrorSign');
           const b1 = document.getElementById('barrel1');
           const b2 = document.getElementById('barrel2');
 
-          b1.addEventListener('model-loaded', () => console.log('barrel1 loaded'));
-          b2.addEventListener('model-loaded', () => console.log('barrel2 loaded'));
-          b1.addEventListener('model-error', (e) => console.log('barrel1 MODEL ERROR', e.detail));
-          b2.addEventListener('model-error', (e) => console.log('barrel2 MODEL ERROR', e.detail));
+          const onErr = (which) => (e) => {
+            console.log(which, "BARREL MODEL ERROR:", e.detail);
+            sign.setAttribute('visible', 'true');
+          };
+
+          b1.addEventListener('model-loaded', () => console.log("barrel1 loaded"));
+          b2.addEventListener('model-loaded', () => console.log("barrel2 loaded"));
+          b1.addEventListener('model-error', onErr("barrel1"));
+          b2.addEventListener('model-error', onErr("barrel2"));
         })();
       </script>
-
     </a-scene>
   </body>
 </html>
