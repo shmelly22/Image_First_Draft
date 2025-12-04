@@ -177,11 +177,11 @@
 
         <!-- Door marker -->
         <a-entity id="doorMarker" position="0 0.45 3.35">
-          <!-- ONE barrel: move to the RIGHT (+x), place on floor, rotate upright + flip 180 -->
+          <!-- ONE barrel: shifted RIGHT (when facing the cabin), upright -->
           <a-entity
             id="barrelWrap"
-            position="1.15 -0.45 1.05"
-            rotation="0 180 90"
+            position="1.85 -0.45 1.05"
+            rotation="0 0 90"
             scale="0.03 0.03 0.03"
           >
             <a-entity id="barrel" gltf-model="#barrelModel" auto-ground></a-entity>
