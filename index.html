@@ -23,9 +23,9 @@
       </a-assets>
 
       <!-- =========================================================
-           2) CAMERA / PLAYER
+           2) CAMERA / PLAYER (start closer to the fire)
       ========================================================== -->
-      <a-entity camera look-controls wasd-controls position="0 1.6 7"></a-entity>
+      <a-entity camera look-controls wasd-controls position="0 1.6 2.2"></a-entity>
 
       <!-- =========================================================
            3) SKY + MOON + GLOBAL LIGHTING
@@ -211,7 +211,10 @@
 
         <!-- Door marker -->
         <a-entity id="doorMarker" position="0 0.45 3.35">
-          <!-- ONE barrel: upright + flipped 180° + sits on the floor -->
+          <!-- Upright barrel:
+               Most GLBs are Z-up or sideways; this rotation fixes it:
+               - X 90 makes it stand upright
+               - Y 180 flips it around -->
           <a-entity
             id="barrelWrap"
             position="0 -0.45 1.05"
@@ -268,7 +271,10 @@
             e.setAttribute('height', length);
             e.setAttribute('position', `${pos.x} ${y} ${pos.z}`);
             e.setAttribute('rotation', `${rot.x} ${rot.y} ${rot.z}`);
-            e.setAttribute('material', 'src:#woodTex; repeat:3 1; roughness:1; metalness:0');
+            e.setAttribute(
+              'material',
+              'src:#woodTex; repeat:3 1; roughness:1; metalness:0'
+            );
             logs.appendChild(e);
           }
 
@@ -285,8 +291,18 @@
             // Front wall with doorway hole
             if (y <= doorTopY) {
               const segLen = W / 2 - doorHalf;
-              addLog({ x: -(doorHalf + segLen / 2), z: zFront }, { x: 0, y: 0, z: 90 }, segLen, y);
-              addLog({ x: doorHalf + segLen / 2, z: zFront }, { x: 0, y: 0, z: 90 }, segLen, y);
+              addLog(
+                { x: -(doorHalf + segLen / 2), z: zFront },
+                { x: 0, y: 0, z: 90 },
+                segLen,
+                y
+              );
+              addLog(
+                { x: doorHalf + segLen / 2, z: zFront },
+                { x: 0, y: 0, z: 90 },
+                segLen,
+                y
+              );
             } else {
               addLog({ x: 0, z: zFront }, { x: 0, y: 0, z: 90 }, W, y);
             }
@@ -299,7 +315,8 @@
           const clearFire = { x: 0, z: -4, r: 7 };
           const clearCabin = { x: 8, z: -7, r: 8 };
 
-          const inClearing = (x, z, c) => (x - c.x) ** 2 + (z - c.z) ** 2 < c.r ** 2;
+          const inClearing = (x, z, c) =>
+            (x - c.x) ** 2 + (z - c.z) ** 2 < c.r ** 2;
 
           function makeTree(x, z, s) {
             const t = document.createElement('a-entity');
@@ -310,7 +327,10 @@
             trunk.setAttribute('radius', 0.12 * s);
             trunk.setAttribute('height', 2.0 * s);
             trunk.setAttribute('position', `0 ${1.0 * s} 0`);
-            trunk.setAttribute('material', 'src:#woodTex; repeat:1 2; roughness:1; metalness:0');
+            trunk.setAttribute(
+              'material',
+              'src:#woodTex; repeat:1 2; roughness:1; metalness:0'
+            );
 
             const c1 = document.createElement('a-cone');
             c1.setAttribute('radius-bottom', 1.2 * s);
@@ -340,7 +360,8 @@
             const x = (Math.random() * 2 - 1) * RANGE;
             const z = (Math.random() * 2 - 1) * RANGE;
 
-            if (inClearing(x, z, clearFire) || inClearing(x, z, clearCabin)) continue;
+            if (inClearing(x, z, clearFire) || inClearing(x, z, clearCabin))
+              continue;
 
             forest.appendChild(makeTree(x, z, 0.9 + Math.random() * 1.0));
             placed++;
@@ -350,7 +371,8 @@
         /* C) ROCK RING */
         (function ringOfRocks() {
           const ring = document.getElementById('rockRing');
-          const cx = 0, cz = -4;
+          const cx = 0,
+            cz = -4;
           const count = 6;
           const baseR = 3.4;
 
