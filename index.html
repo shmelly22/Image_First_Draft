@@ -209,15 +209,16 @@
           position="0 0.10 3.65"
         ></a-box>
 
-        <!-- Door marker: we still use it as a reference, but now just 1 barrel,
-             rotated 180° and dropped to the ground in front of the porch. -->
+        <!-- Door marker -->
         <a-entity id="doorMarker" position="0 0.45 3.35">
+          <!-- ONE barrel: upright + flipped 180° + sits on the floor -->
           <a-entity
-            position="0 -0.45 1.1"
-            rotation="0 180 0"
+            id="barrelWrap"
+            position="0 -0.45 1.05"
+            rotation="90 180 0"
             scale="0.03 0.03 0.03"
           >
-            <a-entity gltf-model="#barrelModel" auto-ground></a-entity>
+            <a-entity id="barrel" gltf-model="#barrelModel" auto-ground></a-entity>
           </a-entity>
         </a-entity>
       </a-entity>
